@@ -83,7 +83,7 @@
   }
   
   .nav-item-active {
-    @apply text-primary bg-primary/10;
+    @apply text-primary bg-primary bg-opacity-10;
   }
   
   .nav-item-inactive {

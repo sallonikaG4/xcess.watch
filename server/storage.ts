@@ -93,11 +93,11 @@ export interface IStorage {
     idScans: number;
   }>;
 
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -223,13 +223,11 @@ export class DatabaseStorage implements IStorage {
       sql`${bannedGuests.idNumber} ILIKE ${`%${query}%`}`
     );
 
-    const baseQuery = db.select().from(bannedGuests).where(searchCondition);
-    
     if (clubId) {
-      return await baseQuery.where(and(searchCondition, eq(bannedGuests.clubId, clubId)));
+      return await db.select().from(bannedGuests).where(and(searchCondition, eq(bannedGuests.clubId, clubId)));
     }
     
-    return await baseQuery;
+    return await db.select().from(bannedGuests).where(searchCondition);
   }
 
   // Guestlists
@@ -311,22 +309,26 @@ export class DatabaseStorage implements IStorage {
 
   // Notifications
   async getNotifications(userId?: number, role?: string): Promise<Notification[]> {
-    let query = db.select().from(notifications).orderBy(desc(notifications.createdAt));
-    
     if (userId && role) {
-      query = query.where(
-        or(
-          eq(notifications.targetUserId, userId),
-          eq(notifications.targetRole, role as any)
+      return await db.select().from(notifications)
+        .where(
+          or(
+            eq(notifications.targetUserId, userId),
+            eq(notifications.targetRole, role as any)
+          )
         )
-      );
+        .orderBy(desc(notifications.createdAt));
     } else if (userId) {
-      query = query.where(eq(notifications.targetUserId, userId));
+      return await db.select().from(notifications)
+        .where(eq(notifications.targetUserId, userId))
+        .orderBy(desc(notifications.createdAt));
     } else if (role) {
-      query = query.where(eq(notifications.targetRole, role as any));
+      return await db.select().from(notifications)
+        .where(eq(notifications.targetRole, role as any))
+        .orderBy(desc(notifications.createdAt));
     }
     
-    return await query;
+    return await db.select().from(notifications).orderBy(desc(notifications.createdAt));
   }
 
   async createNotification(notification: InsertNotification): Promise<Notification> {
@@ -346,8 +348,6 @@ export class DatabaseStorage implements IStorage {
 
   // Chat
   async getChatMessages(fromUserId?: number, toUserId?: number, clubId?: number): Promise<ChatMessage[]> {
-    let query = db.select().from(chatMessages).orderBy(desc(chatMessages.createdAt));
-    
     const conditions = [];
     if (fromUserId && toUserId) {
       conditions.push(
@@ -362,10 +362,12 @@ export class DatabaseStorage implements IStorage {
     }
     
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      return await db.select().from(chatMessages)
+        .where(and(...conditions))
+        .orderBy(desc(chatMessages.createdAt));
     }
     
-    return await query;
+    return await db.select().from(chatMessages).orderBy(desc(chatMessages.createdAt));
   }
 
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {

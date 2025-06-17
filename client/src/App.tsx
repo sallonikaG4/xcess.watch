@@ -13,6 +13,9 @@ import GuestlistsPage from "@/pages/guestlists-page";
 import ClubsPage from "@/pages/clubs-page";
 import UsersPage from "@/pages/users-page";
 import ChatPage from "@/pages/chat-page";
+import UserSettingsPage from "@/pages/user-settings-page";
+import PlatformSettingsPage from "@/pages/platform-settings-page";
+import PluginsPage from "@/pages/plugins-page";
 import NotFound from "@/pages/not-found";
 import "./lib/i18n";
 

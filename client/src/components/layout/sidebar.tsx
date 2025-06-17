@@ -75,16 +75,22 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const settingsItems = [
     {
-      name: t("settings"),
-      href: "/settings",
-      icon: Settings,
-      roles: ["super_admin", "admin", "club_manager"]
+      name: "Platform Settings",
+      href: "/platform-settings",
+      icon: Shield,
+      roles: ["super_admin"]
     },
     {
-      name: t("plugins"),
+      name: "Plugins",
       href: "/plugins",
       icon: Puzzle,
-      roles: ["super_admin", "admin"]
+      roles: ["super_admin"]
+    },
+    {
+      name: "User Settings",
+      href: "/user-settings",
+      icon: Settings,
+      roles: ["super_admin", "admin", "club_manager", "security_teamleader", "security_personnel", "club_employee"]
     },
     {
       name: t("help"),

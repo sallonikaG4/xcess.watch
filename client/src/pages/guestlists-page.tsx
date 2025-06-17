@@ -23,7 +23,7 @@ import { z } from "zod";
 
 const guestlistFormSchema = z.object({
   name: z.string().min(1, "Event name is required"),
-  eventDate: z.string().min(1, "Event date is required").transform((str) => new Date(str)),
+  eventDate: z.string().min(1, "Event date is required"),
   description: z.string().optional(),
   maxGuests: z.number().min(1, "Max guests must be at least 1"),
   clubId: z.number().min(1, "Club selection is required"),
@@ -40,7 +40,15 @@ const guestEntryFormSchema = z.object({
   status: z.enum(["pending", "approved", "rejected", "checked_in", "no_show", "revoked"]),
 });
 
-type GuestlistFormData = z.infer<typeof guestlistFormSchema>;
+type GuestlistFormData = {
+  name: string;
+  eventDate: string;
+  description?: string;
+  maxGuests: number;
+  clubId: number;
+  isActive: boolean;
+};
+
 type GuestEntryFormData = z.infer<typeof guestEntryFormSchema>;
 
 const getStatusLabel = (status: string) => {

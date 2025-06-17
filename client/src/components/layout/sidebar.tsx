@@ -12,7 +12,8 @@ import {
   Settings, 
   Puzzle, 
   HelpCircle,
-  Shield
+  Shield,
+  Key
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";

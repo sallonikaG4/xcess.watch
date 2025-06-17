@@ -142,8 +142,8 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               
               return (
                 <Link key={item.name} href={item.href}>
-                  <a className={cn(
-                    "nav-item w-full",
+                  <div className={cn(
+                    "nav-item w-full cursor-pointer",
                     isActive ? "nav-item-active" : "nav-item-inactive"
                   )}>
                     <Icon className="w-5 h-5 mr-3" />
@@ -153,7 +153,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                         {item.badge}
                       </Badge>
                     )}
-                  </a>
+                  </div>
                 </Link>
               );
             })}
@@ -169,13 +169,13 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 
                 return (
                   <Link key={item.name} href={item.href}>
-                    <a className={cn(
-                      "nav-item w-full",
+                    <div className={cn(
+                      "nav-item w-full cursor-pointer",
                       isActive ? "nav-item-active" : "nav-item-inactive"
                     )}>
                       <Icon className="w-5 h-5 mr-3" />
                       <span>{item.name}</span>
-                    </a>
+                    </div>
                   </Link>
                 );
               })}

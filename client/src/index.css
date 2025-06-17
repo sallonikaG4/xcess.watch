@@ -83,10 +83,10 @@
   }
   
   .nav-item-active {
-    @apply text-primary bg-primary bg-opacity-10;
+    @apply text-white bg-primary;
   }
   
   .nav-item-inactive {
-    @apply text-muted-foreground hover:bg-accent hover:text-accent-foreground;
+    @apply text-muted-foreground hover:bg-primary hover:text-white;
   }
 }

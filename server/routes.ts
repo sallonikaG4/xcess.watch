@@ -941,6 +941,143 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Chat API routes
+  app.get("/api/chat/contacts", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      // Get all users except current user as potential contacts
+      const allUsers = await storage.getUsersByRole("super_admin");
+      const adminUsers = await storage.getUsersByRole("admin");
+      const clubManagers = await storage.getUsersByRole("club_manager");
+      const securityLeaders = await storage.getUsersByRole("security_teamleader");
+      const securityPersonnel = await storage.getUsersByRole("security_personnel");
+
+      const contacts = [
+        ...allUsers,
+        ...adminUsers,
+        ...clubManagers,
+        ...securityLeaders,
+        ...securityPersonnel
+      ].filter(user => user.id !== req.user!.id);
+
+      // Get unread message counts and last messages for each contact
+      const contactsWithChatInfo = await Promise.all(
+        contacts.map(async (contact) => {
+          const messages = await storage.getChatMessages(contact.id, req.user!.id);
+          const unreadMessages = messages.filter(msg => !msg.read && msg.fromUserId === contact.id);
+          const lastMessage = messages[messages.length - 1];
+
+          return {
+            id: contact.id,
+            fullName: contact.fullName,
+            role: contact.role,
+            isOnline: Math.random() > 0.5, // Simulate online status
+            unreadCount: unreadMessages.length,
+            lastMessage: lastMessage?.message || null,
+            lastSeen: lastMessage?.createdAt?.toISOString() || null
+          };
+        })
+      );
+
+      res.json(contactsWithChatInfo);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ error: "Failed to fetch contacts" });
+    }
+  });
+
+  app.get("/api/chat/messages/:contactId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const messages = await storage.getChatMessages(req.user!.id, contactId);
+
+      // Format messages for frontend
+      const formattedMessages = messages.map(msg => ({
+        id: msg.id,
+        fromUserId: msg.fromUserId,
+        toUserId: msg.toUserId,
+        message: msg.message,
+        timestamp: msg.createdAt.toISOString(),
+        read: msg.read,
+        messageType: 'text'
+      }));
+
+      res.json(formattedMessages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/chat/messages", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const { toUserId, message, messageType = "text" } = req.body;
+
+      if (!toUserId || !message) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const newMessage = await storage.createChatMessage({
+        fromUserId: req.user!.id,
+        toUserId,
+        message,
+        read: false
+      });
+
+      // Broadcast message via WebSocket
+      broadcastToUser(toUserId, {
+        type: "new_message",
+        data: {
+          id: newMessage.id,
+          fromUserId: req.user!.id,
+          toUserId,
+          message,
+          timestamp: newMessage.createdAt.toISOString(),
+          read: false,
+          messageType
+        }
+      });
+
+      res.status(201).json(newMessage);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  app.post("/api/chat/messages/read/:fromUserId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const fromUserId = parseInt(req.params.fromUserId);
+      await storage.markMessagesAsRead(req.user!.id, fromUserId);
+
+      // Notify sender that messages were read
+      broadcastToUser(fromUserId, {
+        type: "messages_read",
+        data: { readBy: req.user!.id }
+      });
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ error: "Failed to mark messages as read" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup

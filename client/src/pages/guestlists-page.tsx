@@ -620,6 +620,7 @@ export default function GuestlistsPage() {
                   </DialogContent>
                 </Dialog>
               )}
+              </div>
             </div>
 
             <div className="flex space-x-4 mb-6">

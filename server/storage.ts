@@ -93,6 +93,13 @@ export interface IStorage {
     idScans: number;
   }>;
 
+  // Licenses
+  getAllLicenses(): Promise<License[]>;
+  getLicense(id: number): Promise<License | undefined>;
+  createLicense(license: InsertLicense): Promise<License>;
+  updateLicense(id: number, updates: Partial<InsertLicense>): Promise<License>;
+  revokeLicense(id: number): Promise<void>;
+
   sessionStore: any;
 }
 

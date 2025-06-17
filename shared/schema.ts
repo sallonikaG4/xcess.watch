@@ -180,6 +180,21 @@ export const activityLogs = pgTable("activity_logs", {
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
+// Licenses table
+export const licenses = pgTable("licenses", {
+  id: serial("id").primaryKey(),
+  organization: text("organization").notNull(),
+  licenseKey: text("license_key").notNull().unique(),
+  licenseType: text("license_type").notNull(),
+  maxClubs: integer("max_clubs").notNull(),
+  maxUsers: integer("max_users").notNull(),
+  expirationDate: text("expiration_date").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  features: text("features").notNull(), // JSON array of features
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   clubAssignments: many(userClubAssignments),
@@ -302,6 +317,12 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true
 });
 
+export const insertLicenseSchema = createInsertSchema(licenses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -319,3 +340,5 @@ export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type SecurityCompany = typeof securityCompanies.$inferSelect;
+export type InsertLicense = z.infer<typeof insertLicenseSchema>;
+export type License = typeof licenses.$inferSelect;

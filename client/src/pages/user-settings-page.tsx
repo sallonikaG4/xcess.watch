@@ -1,34 +1,34 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Save, Key, User, Mail, Phone, Shield, Eye, EyeOff } from "lucide-react";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Topbar } from "@/components/layout/topbar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { User, Shield, Eye, EyeOff, Lock, Mail, Phone, Calendar } from "lucide-react";
 
 const profileFormSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
   fullName: z.string().min(1, "Full name is required"),
-  email: z.string().email("Valid email is required"),
+  email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
 });
 
 const passwordFormSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(1, "Password confirmation is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -36,18 +36,6 @@ const passwordFormSchema = z.object({
 
 type ProfileFormData = z.infer<typeof profileFormSchema>;
 type PasswordFormData = z.infer<typeof passwordFormSchema>;
-
-const getRoleLabel = (role: string) => {
-  const labels: Record<string, string> = {
-    super_admin: "Super Admin",
-    admin: "Admin",
-    club_manager: "Club Manager",
-    security_teamleader: "Security Team Leader",
-    security_personnel: "Security Personnel",
-    club_employee: "Club Employee",
-  };
-  return labels[role] || role;
-};
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
@@ -95,19 +83,19 @@ export default function UserSettingsPage() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
-      const response = await apiRequest("PATCH", `/api/users/${user?.id}`, data);
-      return response.json();
+      const res = await apiRequest("PUT", `/api/users/${user?.id}`, data);
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Success",
-        description: "Profile updated successfully",
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Update failed",
         description: error.message,
         variant: "destructive",
       });
@@ -116,22 +104,22 @@ export default function UserSettingsPage() {
 
   const changePasswordMutation = useMutation({
     mutationFn: async (data: PasswordFormData) => {
-      const response = await apiRequest("POST", `/api/users/${user?.id}/change-password`, {
+      const res = await apiRequest("POST", `/api/users/${user?.id}/change-password`, {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });
-      return response.json();
+      return res.json();
     },
     onSuccess: () => {
-      passwordForm.reset();
       toast({
-        title: "Success",
-        description: "Password changed successfully",
+        title: "Password changed",
+        description: "Your password has been changed successfully.",
       });
+      passwordForm.reset();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Password change failed",
         description: error.message,
         variant: "destructive",
       });
@@ -196,7 +184,7 @@ export default function UserSettingsPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Role</span>
                         <Badge variant={getRoleBadgeVariant(user.role)}>
-                          {getRoleLabel(user.role)}
+                          {user.role.replace('_', ' ').toUpperCase()}
                         </Badge>
                       </div>
                       
@@ -245,80 +233,80 @@ export default function UserSettingsPage() {
                       </CardHeader>
                       <CardContent>
                         <Form {...profileForm}>
-                          <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                            <FormField
-                              control={profileForm.control}
-                              name="username"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Username</FormLabel>
-                                  <FormControl>
-                                    <Input 
-                                      placeholder="Enter username" 
-                                      {...field}
-                                      disabled={true}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                  <p className="text-sm text-muted-foreground">
-                                    Username cannot be changed. Contact an administrator if needed.
-                                  </p>
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={profileForm.control}
-                              name="fullName"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Full Name</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Enter full name" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={profileForm.control}
-                              name="email"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Email Address</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Enter email" type="email" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={profileForm.control}
-                              name="phone"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Phone Number</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Enter phone number" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <div className="pt-4">
-                              <Button 
-                                type="submit" 
-                                disabled={updateProfileMutation.isPending}
-                                className="w-full"
-                              >
-                                <Save className="w-4 h-4 mr-2" />
-                                Save Changes
-                              </Button>
+                          <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <FormField
+                                control={profileForm.control}
+                                name="username"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Username</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={profileForm.control}
+                                name="fullName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Full Name</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
                             </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <FormField
+                                control={profileForm.control}
+                                name="email"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input {...field} className="pl-10" type="email" />
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={profileForm.control}
+                                name="phone"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Phone (Optional)</FormLabel>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input {...field} className="pl-10" type="tel" />
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <Button 
+                              type="submit" 
+                              disabled={updateProfileMutation.isPending}
+                              className="w-full"
+                            >
+                              {updateProfileMutation.isPending ? "Updating..." : "Update Profile"}
+                            </Button>
                           </form>
                         </Form>
                       </CardContent>
@@ -327,130 +315,6 @@ export default function UserSettingsPage() {
 
                   <TabsContent value="security">
                     <div className="space-y-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <Key className="w-5 h-5" />
-                            <span>Change Password</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <Form {...passwordForm}>
-                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                              <FormField
-                                control={passwordForm.control}
-                                name="currentPassword"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Current Password</FormLabel>
-                                    <FormControl>
-                                      <div className="relative">
-                                        <Input 
-                                          placeholder="Enter current password" 
-                                          type={showCurrentPassword ? "text" : "password"}
-                                          {...field} 
-                                        />
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                        >
-                                          {showCurrentPassword ? (
-                                            <EyeOff className="h-4 w-4" />
-                                          ) : (
-                                            <Eye className="h-4 w-4" />
-                                          )}
-                                        </Button>
-                                      </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={passwordForm.control}
-                                name="newPassword"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>New Password</FormLabel>
-                                    <FormControl>
-                                      <div className="relative">
-                                        <Input 
-                                          placeholder="Enter new password" 
-                                          type={showNewPassword ? "text" : "password"}
-                                          {...field} 
-                                        />
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                          onClick={() => setShowNewPassword(!showNewPassword)}
-                                        >
-                                          {showNewPassword ? (
-                                            <EyeOff className="h-4 w-4" />
-                                          ) : (
-                                            <Eye className="h-4 w-4" />
-                                          )}
-                                        </Button>
-                                      </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={passwordForm.control}
-                                name="confirmPassword"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Confirm New Password</FormLabel>
-                                    <FormControl>
-                                      <div className="relative">
-                                        <Input 
-                                          placeholder="Confirm new password" 
-                                          type={showConfirmPassword ? "text" : "password"}
-                                          {...field} 
-                                        />
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        >
-                                          {showConfirmPassword ? (
-                                            <EyeOff className="h-4 w-4" />
-                                          ) : (
-                                            <Eye className="h-4 w-4" />
-                                          )}
-                                        </Button>
-                                      </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <div className="pt-4">
-                                <Button 
-                                  type="submit" 
-                                  disabled={changePasswordMutation.isPending}
-                                  className="w-full"
-                                >
-                                  <Key className="w-4 h-4 mr-2" />
-                                  Change Password
-                                </Button>
-                              </div>
-                            </form>
-                          </Form>
-                        </CardContent>
-                      </Card>
-
                       <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center space-x-2">
@@ -480,23 +344,141 @@ export default function UserSettingsPage() {
                                 )}
                               </div>
                             </div>
-                            
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">Account Security</label>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="default">Secure</Badge>
-                                <p className="text-sm text-muted-foreground">
-                                  Account is protected
-                                </p>
-                              </div>
-                            </div>
                           </div>
-                          
-                          <div className="pt-4 border-t">
-                            <h4 className="font-medium mb-2">Security Guidelines</h4>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <Lock className="w-5 h-5" />
+                            <span>Change Password</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <Form {...passwordForm}>
+                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                              <FormField
+                                control={passwordForm.control}
+                                name="currentPassword"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Current Password</FormLabel>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <Input 
+                                          {...field} 
+                                          type={showCurrentPassword ? "text" : "password"}
+                                          className="pr-10"
+                                        />
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                        >
+                                          {showCurrentPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                          ) : (
+                                            <Eye className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={passwordForm.control}
+                                name="newPassword"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>New Password</FormLabel>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <Input 
+                                          {...field} 
+                                          type={showNewPassword ? "text" : "password"}
+                                          className="pr-10"
+                                        />
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                          onClick={() => setShowNewPassword(!showNewPassword)}
+                                        >
+                                          {showNewPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                          ) : (
+                                            <Eye className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={passwordForm.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Confirm New Password</FormLabel>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <Input 
+                                          {...field} 
+                                          type={showConfirmPassword ? "text" : "password"}
+                                          className="pr-10"
+                                        />
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        >
+                                          {showConfirmPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                          ) : (
+                                            <Eye className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <Button 
+                                type="submit" 
+                                disabled={changePasswordMutation.isPending}
+                                className="w-full"
+                              >
+                                {changePasswordMutation.isPending ? "Changing Password..." : "Change Password"}
+                              </Button>
+                            </form>
+                          </Form>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Security Tips</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <h4 className="font-medium">Keep your account secure:</h4>
                             <ul className="text-sm text-muted-foreground space-y-1">
                               <li>• Use a strong, unique password</li>
-                              <li>• Don't share your account credentials</li>
+                              <li>• Don't share your login credentials</li>
                               <li>• Log out when using shared devices</li>
                               <li>• Report suspicious activity immediately</li>
                             </ul>
@@ -508,8 +490,8 @@ export default function UserSettingsPage() {
                 </Tabs>
               </div>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

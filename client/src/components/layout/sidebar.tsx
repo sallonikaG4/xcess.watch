@@ -75,15 +75,9 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const settingsItems = [
     {
-      name: "Platform Settings",
-      href: "/platform-settings",
-      icon: Shield,
-      roles: ["super_admin"]
-    },
-    {
-      name: "Plugins",
-      href: "/plugins",
-      icon: Puzzle,
+      name: "Licenses",
+      href: "/licenses",
+      icon: Key,
       roles: ["super_admin"]
     },
     {

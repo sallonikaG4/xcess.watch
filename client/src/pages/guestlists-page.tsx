@@ -23,7 +23,7 @@ import { z } from "zod";
 
 const guestlistFormSchema = z.object({
   name: z.string().min(1, "Event name is required"),
-  eventDate: z.string().min(1, "Event date is required"),
+  eventDate: z.string().min(1, "Event date is required").transform((str) => new Date(str)),
   description: z.string().optional(),
   maxGuests: z.number().min(1, "Max guests must be at least 1"),
   clubId: z.number().min(1, "Club selection is required"),

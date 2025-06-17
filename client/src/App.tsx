@@ -14,8 +14,7 @@ import ClubsPage from "@/pages/clubs-page";
 import UsersPage from "@/pages/users-page";
 import ChatPage from "@/pages/chat-page";
 import UserSettingsPage from "@/pages/user-settings-page";
-import PlatformSettingsPage from "@/pages/platform-settings-page";
-import PluginsPage from "@/pages/plugins-page";
+import LicensesPage from "@/pages/licenses-page";
 import NotFound from "@/pages/not-found";
 import "./lib/i18n";
 
@@ -29,8 +28,7 @@ function Router() {
       <ProtectedRoute path="/users" component={UsersPage} />
       <ProtectedRoute path="/chat" component={ChatPage} />
       <ProtectedRoute path="/user-settings" component={UserSettingsPage} />
-      <ProtectedRoute path="/platform-settings" component={PlatformSettingsPage} />
-      <ProtectedRoute path="/plugins" component={PluginsPage} />
+      <ProtectedRoute path="/licenses" component={LicensesPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

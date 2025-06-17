@@ -25,17 +25,18 @@ const guestlistFormSchema = z.object({
   name: z.string().min(1, "Event name is required"),
   eventDate: z.string().min(1, "Event date is required"),
   description: z.string().optional(),
-  maxCapacity: z.number().min(1, "Capacity must be at least 1"),
+  maxGuests: z.number().min(1, "Max guests must be at least 1"),
   clubId: z.number().min(1, "Club selection is required"),
   isActive: z.boolean(),
 });
 
 const guestEntryFormSchema = z.object({
-  guestName: z.string().min(1, "Guest name is required"),
-  guestEmail: z.string().email("Valid email is required").optional(),
-  guestPhone: z.string().optional(),
-  plusOnes: z.number().min(0, "Plus ones cannot be negative").max(10, "Maximum 10 plus ones"),
-  notes: z.string().optional(),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Valid email is required").optional(),
+  phone: z.string().optional(),
+  guestCount: z.number().min(1, "Guest count must be at least 1").max(10, "Maximum 10 guests"),
+  comments: z.string().optional(),
   status: z.enum(["pending", "approved", "rejected", "checked_in", "no_show", "revoked"]),
 });
 
@@ -103,7 +104,7 @@ export default function GuestlistsPage() {
       name: "",
       eventDate: "",
       description: "",
-      maxCapacity: 100,
+      maxGuests: 100,
       clubId: 0,
       isActive: true,
     },
@@ -112,11 +113,12 @@ export default function GuestlistsPage() {
   const guestForm = useForm<GuestEntryFormData>({
     resolver: zodResolver(guestEntryFormSchema),
     defaultValues: {
-      guestName: "",
-      guestEmail: "",
-      guestPhone: "",
-      plusOnes: 0,
-      notes: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      guestCount: 1,
+      comments: "",
       status: "pending",
     },
   });
@@ -276,7 +278,7 @@ export default function GuestlistsPage() {
       name: guestlist.name,
       eventDate: new Date(guestlist.eventDate).toISOString().split('T')[0],
       description: guestlist.description || "",
-      maxCapacity: guestlist.maxCapacity,
+      maxGuests: guestlist.maxGuests || 100,
       clubId: guestlist.clubId,
       isActive: guestlist.isActive,
     });
@@ -286,11 +288,12 @@ export default function GuestlistsPage() {
   const handleEditGuest = (guest: GuestlistEntry) => {
     setEditingGuest(guest);
     guestForm.reset({
-      guestName: guest.guestName,
-      guestEmail: guest.guestEmail || "",
-      guestPhone: guest.guestPhone || "",
-      plusOnes: guest.plusOnes,
-      notes: guest.notes || "",
+      firstName: guest.firstName,
+      lastName: guest.lastName,
+      email: guest.email || "",
+      phone: guest.phone || "",
+      guestCount: guest.guestCount,
+      comments: guest.comments || "",
       status: guest.status as any,
     });
     setGuestDialogOpen(true);
@@ -312,8 +315,8 @@ export default function GuestlistsPage() {
   });
 
   const filteredEntries = guestlistEntries.filter(entry => {
-    const matchesSearch = entry.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         entry.guestEmail?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = `${entry.firstName} ${entry.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         entry.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || entry.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

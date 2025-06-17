@@ -360,7 +360,7 @@ export default function GuestlistsPage() {
                     <h1 className="text-3xl font-bold text-foreground">{selectedGuestlist.name}</h1>
                     <p className="text-muted-foreground mt-1">
                       {new Date(selectedGuestlist.eventDate).toLocaleDateString()} • 
-                      {guestlistEntries.length}/{selectedGuestlist.maxCapacity} guests
+                      {guestlistEntries.length}/{selectedGuestlist.maxGuests || "∞"} guests
                     </p>
                   </div>
                 </div>
@@ -444,17 +444,17 @@ export default function GuestlistsPage() {
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={guestForm.control}
-                            name="plusOnes"
+                            name="guestCount"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Plus Ones</FormLabel>
+                                <FormLabel>Guest Count</FormLabel>
                                 <FormControl>
                                   <Input 
                                     type="number" 
-                                    min="0" 
+                                    min="1" 
                                     max="10"
                                     {...field}
-                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -491,12 +491,12 @@ export default function GuestlistsPage() {
                         
                         <FormField
                           control={guestForm.control}
-                          name="notes"
+                          name="comments"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Notes</FormLabel>
+                              <FormLabel>Comments</FormLabel>
                               <FormControl>
-                                <Textarea placeholder="Additional notes" {...field} />
+                                <Textarea placeholder="Additional comments" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -889,7 +889,7 @@ export default function GuestlistsPage() {
                       <div className="flex items-center space-x-2">
                         <Users className="w-4 h-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          Capacity: {guestlist.maxCapacity}
+                          Capacity: {guestlist.maxGuests || "Unlimited"}
                         </span>
                       </div>
                       

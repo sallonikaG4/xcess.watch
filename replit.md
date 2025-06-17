@@ -107,6 +107,13 @@ This is a full-stack web application for managing nightclub security operations,
 
 ## Recent Changes
 
+### June 17, 2025 - SMS Notifications & Live Chat Integration
+- **SMS Notification System**: Integrated SMS alerts with ID verification system using Twilio/SendGrid APIs
+- **Enhanced Live Chat**: Real-time messaging system with WebSocket support, contact management, and message threading
+- **ID Scanning Alerts**: Automatic SMS notifications sent to security team when banned guests are detected
+- **Chat API Infrastructure**: Complete REST endpoints for chat contacts (/api/chat/contacts), messages (/api/chat/messages), and real-time WebSocket communication
+- **Database Schema Fixes**: Resolved date validation issues in banned guest creation and improved message handling
+
 ### June 17, 2025 - Comprehensive Platform Management System
 - **Platform Settings**: Complete super admin control panel with SMTP configuration, security policies, feature toggles, and system maintenance settings
 - **License Management**: 16-character license key generation system with organization tracking, feature control, and expiration management

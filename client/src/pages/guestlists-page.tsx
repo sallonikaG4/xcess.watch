@@ -92,6 +92,11 @@ export default function GuestlistsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clubFilter, setClubFilter] = useState<string>("all");
+  const [selectedEntries, setSelectedEntries] = useState<number[]>([]);
+  const [bulkActionDialogOpen, setBulkActionDialogOpen] = useState(false);
+  const [bookmetenderDialogOpen, setBookmetenderDialogOpen] = useState(false);
+  const [qrCodeDialogOpen, setQrCodeDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const { data: guestlists = [], isLoading } = useQuery<Guestlist[]>({
     queryKey: ["/api/guestlists"],
@@ -242,9 +247,7 @@ export default function GuestlistsPage() {
 
   const checkInGuestMutation = useMutation({
     mutationFn: async (entryId: number) => {
-      const response = await apiRequest("POST", `/api/guestlist-entries/${entryId}/check-in`, {
-        checkedInBy: user?.id,
-      });
+      const response = await apiRequest("POST", `/api/guestlist-entries/${entryId}/checkin`);
       return response.json();
     },
     onSuccess: () => {
@@ -261,6 +264,69 @@ export default function GuestlistsPage() {
         variant: "destructive",
       });
     },
+  });
+
+  const bulkActionMutation = useMutation({
+    mutationFn: async ({ action, entryIds }: { action: string; entryIds: number[] }) => {
+      const response = await apiRequest("POST", `/api/guestlists/${selectedGuestlist?.id}/bulk-actions`, {
+        action,
+        entryIds
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/guestlist-entries", selectedGuestlist?.id] });
+      setSelectedEntries([]);
+      setBulkActionDialogOpen(false);
+      toast({
+        title: "Success",
+        description: `Bulk action completed for ${data.processed} guests`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bookmetenderSyncMutation = useMutation({
+    mutationFn: async ({ apiKey, eventId }: { apiKey: string; eventId: string }) => {
+      const response = await apiRequest("POST", "/api/bookmetender/sync", {
+        apiKey,
+        clubId: selectedGuestlist?.clubId || clubs[0]?.id,
+        eventId
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/guestlists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/guestlist-entries", selectedGuestlist?.id] });
+      setBookmetenderDialogOpen(false);
+      toast({
+        title: "Success",
+        description: `Synced ${data.syncedGuests} guests from Bookmetender`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const { data: qrCodeData } = useQuery({
+    queryKey: ["/api/guestlists", selectedGuestlist?.id, "qr-code"],
+    enabled: !!selectedGuestlist && qrCodeDialogOpen,
+  });
+
+  const { data: exportData } = useQuery({
+    queryKey: ["/api/guestlists", selectedGuestlist?.id, "export"],
+    enabled: !!selectedGuestlist && exportDialogOpen,
   });
 
   const onGuestlistSubmit = (data: GuestlistFormData) => {

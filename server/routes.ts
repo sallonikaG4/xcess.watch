@@ -361,17 +361,281 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/guestlist-entries/:id/checkin", requireAuth, async (req, res) => {
     try {
       const entryId = parseInt(req.params.id);
-      const entry = await storage.checkInGuest(entryId, req.user.id);
+      const entry = await storage.checkInGuest(entryId, req.user!.id);
       
       await storage.createActivityLog(
         "guest_checkin",
         `Guest "${entry.firstName} ${entry.lastName}" checked in`,
-        req.user.id
+        req.user!.id
       );
+
+      // Broadcast real-time update
+      broadcastToRole("security_personnel", { type: "guest_checkin", data: entry });
+      broadcastToRole("security_teamleader", { type: "guest_checkin", data: entry });
 
       res.json(entry);
     } catch (error) {
       res.status(500).json({ message: "Failed to check in guest" });
+    }
+  });
+
+  app.patch("/api/guestlist-entries/:id", requireAuth, async (req, res) => {
+    try {
+      const entryId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const entry = await storage.updateGuestlistEntry(entryId, updates);
+      
+      await storage.createActivityLog(
+        "guestlist_entry_updated",
+        `Guest entry for "${entry.firstName} ${entry.lastName}" was updated`,
+        req.user!.id
+      );
+
+      res.json(entry);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update guest entry" });
+    }
+  });
+
+  app.patch("/api/guestlists/:id", requireAuth, requireRole(["super_admin", "admin", "club_manager"]), async (req, res) => {
+    try {
+      const guestlistId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const guestlist = await storage.updateGuestlist(guestlistId, updates);
+      
+      await storage.createActivityLog(
+        "guestlist_updated",
+        `Guestlist "${guestlist.name}" was updated`,
+        req.user!.id,
+        guestlist.clubId
+      );
+
+      res.json(guestlist);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update guestlist" });
+    }
+  });
+
+  app.post("/api/guestlists/:id/bulk-actions", requireAuth, requireRole(["super_admin", "admin", "club_manager", "security_teamleader"]), async (req, res) => {
+    try {
+      const guestlistId = parseInt(req.params.id);
+      const { action, entryIds } = req.body;
+      
+      const results = [];
+      
+      for (const entryId of entryIds) {
+        try {
+          let entry;
+          if (action === "approve") {
+            entry = await storage.updateGuestlistEntry(entryId, { status: "approved" });
+          } else if (action === "reject") {
+            entry = await storage.updateGuestlistEntry(entryId, { status: "rejected" });
+          } else if (action === "checkin") {
+            entry = await storage.checkInGuest(entryId, req.user!.id);
+          }
+          
+          if (entry) {
+            results.push(entry);
+          }
+        } catch (error) {
+          console.error(`Failed to ${action} entry ${entryId}:`, error);
+        }
+      }
+      
+      await storage.createActivityLog(
+        "bulk_action",
+        `Bulk ${action} performed on ${results.length} guests`,
+        req.user!.id
+      );
+
+      res.json({ success: true, processed: results.length });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to perform bulk action" });
+    }
+  });
+
+  app.get("/api/guestlists/:id/qr-code", requireAuth, async (req, res) => {
+    try {
+      const guestlistId = parseInt(req.params.id);
+      const guestlist = await storage.getGuestlist(guestlistId);
+      
+      if (!guestlist) {
+        return res.status(404).json({ message: "Guestlist not found" });
+      }
+      
+      // Generate QR code data
+      const qrData = {
+        type: "guestlist",
+        id: guestlistId,
+        name: guestlist.name,
+        clubId: guestlist.clubId,
+        eventDate: guestlist.eventDate
+      };
+      
+      res.json({ qrCode: JSON.stringify(qrData) });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate QR code" });
+    }
+  });
+
+  app.get("/api/guestlists/:id/export", requireAuth, requireRole(["super_admin", "admin", "club_manager"]), async (req, res) => {
+    try {
+      const guestlistId = parseInt(req.params.id);
+      const entries = await storage.getGuestlistEntries(guestlistId);
+      const guestlist = await storage.getGuestlist(guestlistId);
+      
+      const exportData = {
+        guestlist,
+        entries,
+        exportedAt: new Date().toISOString(),
+        exportedBy: req.user!.username
+      };
+      
+      res.json(exportData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to export guestlist" });
+    }
+  });
+
+  // Bookmetender API Integration Routes
+  app.post("/api/bookmetender/sync", requireAuth, requireRole(["super_admin", "admin", "club_manager"]), async (req, res) => {
+    try {
+      const { apiKey, clubId, eventId } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: "Bookmetender API key required" });
+      }
+      
+      // Simulate Bookmetender API integration
+      const bookmetenderData = {
+        eventId,
+        guests: [
+          {
+            firstName: "John",
+            lastName: "Doe",
+            email: "john.doe@example.com",
+            phone: "+1234567890",
+            status: "confirmed",
+            ticketType: "VIP",
+            plusOnes: 1
+          }
+        ],
+        syncedAt: new Date().toISOString()
+      };
+      
+      // Create guestlist from Bookmetender data
+      const guestlist = await storage.createGuestlist({
+        name: `Bookmetender Event ${eventId}`,
+        eventDate: new Date(),
+        clubId: parseInt(clubId),
+        createdBy: req.user!.id,
+        description: `Synced from Bookmetender Event ${eventId}`,
+        maxGuests: bookmetenderData.guests.length,
+        isActive: true
+      });
+      
+      // Add guests from Bookmetender
+      for (const guest of bookmetenderData.guests) {
+        await storage.createGuestlistEntry({
+          guestlistId: guestlist.id,
+          firstName: guest.firstName,
+          lastName: guest.lastName,
+          email: guest.email,
+          phone: guest.phone,
+          guestCount: guest.plusOnes + 1,
+          status: guest.status === "confirmed" ? "approved" : "pending",
+          comments: `Ticket Type: ${guest.ticketType}`,
+          addedBy: req.user!.id
+        });
+      }
+      
+      await storage.createActivityLog(
+        "bookmetender_sync",
+        `Synchronized ${bookmetenderData.guests.length} guests from Bookmetender`,
+        req.user!.id,
+        guestlist.clubId
+      );
+      
+      res.json({
+        success: true,
+        guestlist,
+        syncedGuests: bookmetenderData.guests.length,
+        syncedAt: bookmetenderData.syncedAt
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to sync with Bookmetender" });
+    }
+  });
+
+  app.post("/api/bookmetender/validate", requireAuth, async (req, res) => {
+    try {
+      const { apiKey, clubId } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: "API key required" });
+      }
+      
+      // Simulate API validation
+      const isValid = apiKey.startsWith("bmt_") && apiKey.length > 20;
+      
+      if (isValid) {
+        res.json({
+          valid: true,
+          clubName: "Sample Club",
+          permissions: ["read_events", "read_guests", "write_guests"],
+          rateLimit: {
+            requestsPerHour: 1000,
+            remaining: 995
+          }
+        });
+      } else {
+        res.status(401).json({
+          valid: false,
+          error: "Invalid API key format"
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to validate Bookmetender API" });
+    }
+  });
+
+  app.get("/api/bookmetender/events", requireAuth, async (req, res) => {
+    try {
+      const { apiKey } = req.query;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: "API key required" });
+      }
+      
+      // Simulate Bookmetender events
+      const events = [
+        {
+          id: "evt_123",
+          name: "Saturday Night Party",
+          date: "2024-12-21",
+          time: "22:00",
+          venue: "Main Club",
+          ticketsSold: 150,
+          capacity: 200,
+          status: "active"
+        },
+        {
+          id: "evt_124",
+          name: "VIP Event",
+          date: "2024-12-22",
+          time: "20:00",
+          venue: "VIP Lounge",
+          ticketsSold: 45,
+          capacity: 50,
+          status: "active"
+        }
+      ];
+      
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch Bookmetender events" });
     }
   });
 

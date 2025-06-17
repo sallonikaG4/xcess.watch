@@ -891,11 +891,11 @@ export function registerRoutes(app: Express): Server {
         // Send SMS alert to security team
         const securityUsers = await storage.getUsersByRole("security_teamleader");
         for (const securityUser of securityUsers) {
-          if (securityUser.phoneNumber) {
+          if (securityUser.phone) {
             await smsService.sendBannedGuestAlert(
-              securityUser.phoneNumber,
+              securityUser.phone,
               `${documentData.firstName} ${documentData.lastName}`,
-              exactMatch.club?.name || "System"
+              "Club Location"
             );
           }
         }
@@ -967,7 +967,7 @@ export function registerRoutes(app: Express): Server {
       const contactsWithChatInfo = await Promise.all(
         contacts.map(async (contact) => {
           const messages = await storage.getChatMessages(contact.id, req.user!.id);
-          const unreadMessages = messages.filter(msg => !msg.read && msg.fromUserId === contact.id);
+          const unreadMessages = messages.filter(msg => !msg.isRead && msg.fromUserId === contact.id);
           const lastMessage = messages[messages.length - 1];
 
           return {
@@ -1005,7 +1005,7 @@ export function registerRoutes(app: Express): Server {
         toUserId: msg.toUserId,
         message: msg.message,
         timestamp: msg.createdAt.toISOString(),
-        read: msg.read,
+        read: msg.isRead,
         messageType: 'text'
       }));
 
@@ -1032,7 +1032,7 @@ export function registerRoutes(app: Express): Server {
         fromUserId: req.user!.id,
         toUserId,
         message,
-        read: false
+        isRead: false
       });
 
       // Broadcast message via WebSocket

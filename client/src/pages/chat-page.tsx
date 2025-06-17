@@ -13,7 +13,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col">
         <Topbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} title={t("chat.title")} />

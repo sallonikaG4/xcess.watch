@@ -598,33 +598,7 @@ export function registerRoutes(app: Express): Server {
   // License Management routes
   app.get("/api/platform/licenses", requireAuth, requireRole(["super_admin"]), async (req, res) => {
     try {
-      const licenses = [
-        {
-          id: 1,
-          organization: "Demo Security Corp",
-          licenseKey: "XESS-1234-5678-9ABC-DEF0",
-          licenseType: "professional",
-          maxClubs: 10,
-          maxUsers: 100,
-          expirationDate: "2025-12-31",
-          isActive: true,
-          features: ["ban_management", "guestlist_management", "real_time_chat", "advanced_reporting"],
-          createdAt: "2024-01-15"
-        },
-        {
-          id: 2,
-          organization: "Enterprise Club Chain",
-          licenseKey: "XESS-ABCD-EFGH-1234-5678",
-          licenseType: "enterprise",
-          maxClubs: 50,
-          maxUsers: 500,
-          expirationDate: "2026-06-30",
-          isActive: true,
-          features: ["ban_management", "guestlist_management", "real_time_chat", "advanced_reporting", "whitelabel_support", "api_access"],
-          createdAt: "2024-02-01"
-        }
-      ];
-      
+      const licenses = await storage.getAllLicenses();
       res.json(licenses);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch licenses" });

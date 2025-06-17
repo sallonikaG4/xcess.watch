@@ -13,6 +13,7 @@ import GuestlistsPage from "@/pages/guestlists-page";
 import ClubsPage from "@/pages/clubs-page";
 import UsersPage from "@/pages/users-page";
 import ChatPage from "@/pages/chat-page";
+import PlatformSettingsPage from "@/pages/platform-settings-page";
 import UserSettingsPage from "@/pages/user-settings-page";
 import LicensesPage from "@/pages/licenses-page";
 import NotFound from "@/pages/not-found";
@@ -27,6 +28,7 @@ function Router() {
       <ProtectedRoute path="/clubs" component={ClubsPage} />
       <ProtectedRoute path="/users" component={UsersPage} />
       <ProtectedRoute path="/chat" component={ChatPage} />
+      <ProtectedRoute path="/platform-settings" component={PlatformSettingsPage} />
       <ProtectedRoute path="/user-settings" component={UserSettingsPage} />
       <ProtectedRoute path="/licenses" component={LicensesPage} />
       <Route path="/auth" component={AuthPage} />

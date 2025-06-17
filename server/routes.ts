@@ -648,7 +648,7 @@ export function registerRoutes(app: Express): Server {
       if (role) {
         users = await storage.getUsersByRole(role);
       } else {
-        users = await storage.getUsersByRole(""); // This will need to be updated to get all users
+        users = await storage.getAllUsers();
       }
       
       res.json(users);

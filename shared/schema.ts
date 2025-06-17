@@ -101,7 +101,7 @@ export const bannedGuests = pgTable("banned_guests", {
   photoBack: text("photo_back"),
   banReason: text("ban_reason").notNull(),
   policeIncidentNumber: text("police_incident_number"),
-  incidentDate: timestamp("incident_date"),
+  incidentDate: text("incident_date"),
   incidentDescription: text("incident_description"),
   status: banStatusEnum("status").notNull().default("banned_sl"),
   clubId: integer("club_id").notNull(),

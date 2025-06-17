@@ -954,13 +954,15 @@ export function registerRoutes(app: Express): Server {
       const clubManagers = await storage.getUsersByRole("club_manager");
       const securityLeaders = await storage.getUsersByRole("security_teamleader");
       const securityPersonnel = await storage.getUsersByRole("security_personnel");
+      const clubEmployees = await storage.getUsersByRole("club_employee");
 
       const contacts = [
         ...allUsers,
         ...adminUsers,
         ...clubManagers,
         ...securityLeaders,
-        ...securityPersonnel
+        ...securityPersonnel,
+        ...clubEmployees
       ].filter(user => user.id !== req.user!.id);
 
       // Get unread message counts and last messages for each contact

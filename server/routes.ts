@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { smsService } from "./sms-service";
 import { 
   insertUserSchema,
   insertClubSchema, 
@@ -886,6 +887,18 @@ export function registerRoutes(app: Express): Server {
           exactMatch.clubId || undefined,
           { documentData, banId: exactMatch.id }
         );
+
+        // Send SMS alert to security team
+        const securityUsers = await storage.getUsersByRole("security_teamleader");
+        for (const securityUser of securityUsers) {
+          if (securityUser.phoneNumber) {
+            await smsService.sendBannedGuestAlert(
+              securityUser.phoneNumber,
+              `${documentData.firstName} ${documentData.lastName}`,
+              exactMatch.club?.name || "System"
+            );
+          }
+        }
       } else {
         verificationResult = {
           allowed: true,

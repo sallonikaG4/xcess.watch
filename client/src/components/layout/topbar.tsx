@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,6 +41,7 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { user, logoutMutation } = useAuth();
+  const [, setLocation] = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleLanguageChange = (value: string) => {
@@ -99,7 +101,10 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
           </Button>
 
           {/* ID Scan Button */}
-          <Button className="flex items-center space-x-2">
+          <Button 
+            className="flex items-center space-x-2"
+            onClick={() => setLocation("/id-scanning")}
+          >
             <QrCode className="h-4 w-4" />
             <span className="hidden sm:inline">{t("scan_id")}</span>
           </Button>

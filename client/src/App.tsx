@@ -28,6 +28,9 @@ function Router() {
       <ProtectedRoute path="/clubs" component={ClubsPage} />
       <ProtectedRoute path="/users" component={UsersPage} />
       <ProtectedRoute path="/chat" component={ChatPage} />
+      <ProtectedRoute path="/user-settings" component={UserSettingsPage} />
+      <ProtectedRoute path="/platform-settings" component={PlatformSettingsPage} />
+      <ProtectedRoute path="/plugins" component={PluginsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

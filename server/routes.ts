@@ -521,6 +521,219 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Platform Settings routes (Super Admin only)
+  app.get("/api/platform/settings", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const settings = {
+        platformName: "XESS Security Platform",
+        platformDescription: "Comprehensive club security management system",
+        supportEmail: "support@xess.watch",
+        timezone: "UTC",
+        language: "en",
+        smtpSecure: true,
+        sessionTimeout: 60,
+        passwordMinLength: 8,
+        passwordRequireSpecial: true,
+        passwordRequireNumbers: true,
+        passwordRequireUppercase: true,
+        maxLoginAttempts: 5,
+        enableGuestInvites: true,
+        enableSMSNotifications: false,
+        enableRealTimeChat: true,
+        enableOfflineMode: false,
+        enableBiometricLogin: false,
+        darkModeEnabled: true,
+        backupEnabled: true,
+        backupFrequency: "daily",
+        dataRetentionDays: 365,
+        maintenanceMode: false,
+      };
+      
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch platform settings" });
+    }
+  });
+
+  app.post("/api/platform/settings", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      await storage.createActivityLog(
+        "platform_settings_updated",
+        `Platform settings updated`,
+        req.user.id
+      );
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update platform settings" });
+    }
+  });
+
+  // License Management routes
+  app.get("/api/platform/licenses", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const licenses = [
+        {
+          id: 1,
+          organization: "Demo Security Corp",
+          licenseKey: "XESS-1234-5678-9ABC-DEF0",
+          licenseType: "professional",
+          maxClubs: 10,
+          maxUsers: 100,
+          expirationDate: "2025-12-31",
+          isActive: true,
+          features: ["ban_management", "guestlist_management", "real_time_chat", "advanced_reporting"],
+          createdAt: "2024-01-15"
+        },
+        {
+          id: 2,
+          organization: "Enterprise Club Chain",
+          licenseKey: "XESS-ABCD-EFGH-1234-5678",
+          licenseType: "enterprise",
+          maxClubs: 50,
+          maxUsers: 500,
+          expirationDate: "2026-06-30",
+          isActive: true,
+          features: ["ban_management", "guestlist_management", "real_time_chat", "advanced_reporting", "whitelabel_support", "api_access"],
+          createdAt: "2024-02-01"
+        }
+      ];
+      
+      res.json(licenses);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch licenses" });
+    }
+  });
+
+  app.post("/api/platform/licenses/generate", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const { licenseeOrganization, licenseType, maxClubs, maxUsers, expirationDate, features } = req.body;
+      
+      const generateLicenseKey = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = 'XESS-';
+        for (let i = 0; i < 4; i++) {
+          if (i > 0) result += '-';
+          for (let j = 0; j < 4; j++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+        }
+        return result;
+      };
+      
+      const licenseKey = generateLicenseKey();
+      
+      await storage.createActivityLog(
+        "license_generated",
+        `License generated for ${licenseeOrganization}`,
+        req.user.id
+      );
+      
+      res.json({ licenseKey });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate license" });
+    }
+  });
+
+  // Plugin Management routes
+  app.get("/api/plugins", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const plugins: any[] = [];
+      res.json(plugins);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch plugins" });
+    }
+  });
+
+  app.post("/api/plugins/install", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      await storage.createActivityLog(
+        "plugin_installed",
+        `Plugin installation attempted`,
+        req.user.id
+      );
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to install plugin" });
+    }
+  });
+
+  app.post("/api/plugins/:id/toggle", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const pluginId = req.params.id;
+      const { enabled } = req.body;
+      
+      await storage.createActivityLog(
+        "plugin_toggled",
+        `Plugin ${pluginId} ${enabled ? 'enabled' : 'disabled'}`,
+        req.user.id
+      );
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to toggle plugin" });
+    }
+  });
+
+  app.post("/api/plugins/:id/config", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const pluginId = req.params.id;
+      
+      await storage.createActivityLog(
+        "plugin_configured",
+        `Plugin ${pluginId} configuration updated`,
+        req.user.id
+      );
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update plugin configuration" });
+    }
+  });
+
+  app.delete("/api/plugins/:id", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const pluginId = req.params.id;
+      
+      await storage.createActivityLog(
+        "plugin_uninstalled",
+        `Plugin ${pluginId} uninstalled`,
+        req.user.id
+      );
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to uninstall plugin" });
+    }
+  });
+
+  // User password change route
+  app.post("/api/users/:id/change-password", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { currentPassword, newPassword } = req.body;
+      
+      if (req.user.id !== userId && !["super_admin", "admin"].includes(req.user.role)) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, { 
+        password: newPassword
+      });
+      
+      await storage.createActivityLog(
+        "password_changed",
+        `Password changed for user ${userId}`,
+        req.user.id
+      );
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup

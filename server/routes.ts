@@ -391,6 +391,31 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.post("/api/users", requireAuth, requireRole(["super_admin", "admin"]), async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(validatedData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      const user = await storage.createUser(validatedData);
+      
+      await storage.createActivityLog(
+        "user_created",
+        `User created: ${user.username}`,
+        req.user!.id
+      );
+      
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   app.post("/api/users/:id/assign-club", requireAuth, requireRole(["super_admin", "admin"]), async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -705,6 +730,31 @@ export function registerRoutes(app: Express): Server {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ message: "Failed to uninstall plugin" });
+    }
+  });
+
+  // User profile update route
+  app.put("/api/users/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Only allow users to update their own profile or super_admin to update any
+      if (req.user!.id !== userId && req.user!.role !== "super_admin") {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const user = await storage.updateUser(userId, updates);
+      await storage.createActivityLog(
+        "user_updated",
+        `User profile updated: ${user.username}`,
+        req.user!.id
+      );
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
     }
   });
 

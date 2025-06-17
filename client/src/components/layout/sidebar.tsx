@@ -76,6 +76,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const settingsItems = [
     {
+      name: "Platform Settings",
+      href: "/platform-settings",
+      icon: Settings,
+      roles: ["super_admin"]
+    },
+    {
       name: "Licenses",
       href: "/licenses",
       icon: Key,

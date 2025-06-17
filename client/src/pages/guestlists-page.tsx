@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Search, Users, Calendar, CheckCircle, XCircle, Clock, Mail, MessageSquare } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Users, Calendar, CheckCircle, XCircle, Clock, Mail, MessageSquare, QrCode, Download, RefreshCw, MoreHorizontal } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -432,14 +433,40 @@ export default function GuestlistsPage() {
                 </div>
               </div>
               
-              {canManageGuestlists && (
-                <Dialog open={guestDialogOpen} onOpenChange={setGuestDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Guest
+              <div className="flex items-center space-x-2">
+                {canManageGuestlists && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => setQrCodeDialogOpen(true)}
+                    >
+                      <QrCode className="w-4 h-4 mr-2" />
+                      QR Code
                     </Button>
-                  </DialogTrigger>
+                    <Button
+                      variant="outline"
+                      onClick={() => setExportDialogOpen(true)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setBookmetenderDialogOpen(true)}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Sync Bookmetender
+                    </Button>
+                  </>
+                )}
+                {canManageGuestlists && (
+                  <Dialog open={guestDialogOpen} onOpenChange={setGuestDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Guest
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="max-w-md">
                     <DialogHeader>
                       <DialogTitle>
@@ -619,6 +646,16 @@ export default function GuestlistsPage() {
                   <SelectItem value="revoked">Revoked</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {selectedEntries.length > 0 && canManageGuestlists && (
+                <Button
+                  variant="outline"
+                  onClick={() => setBulkActionDialogOpen(true)}
+                >
+                  <MoreHorizontal className="w-4 h-4 mr-2" />
+                  Bulk Actions ({selectedEntries.length})
+                </Button>
+              )}
             </div>
 
             <Card>
@@ -629,6 +666,18 @@ export default function GuestlistsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedEntries.length === filteredEntries.length && filteredEntries.length > 0}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedEntries(filteredEntries.map(entry => entry.id));
+                            } else {
+                              setSelectedEntries([]);
+                            }
+                          }}
+                        />
+                      </TableHead>
                       <TableHead>Guest Information</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Plus Ones</TableHead>
@@ -639,6 +688,18 @@ export default function GuestlistsPage() {
                   <TableBody>
                     {filteredEntries.map((entry) => (
                       <TableRow key={entry.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedEntries.includes(entry.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedEntries([...selectedEntries, entry.id]);
+                              } else {
+                                setSelectedEntries(selectedEntries.filter(id => id !== entry.id));
+                              }
+                            }}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div>
                             <div className="font-medium">{entry.firstName} {entry.lastName}</div>
@@ -698,6 +759,161 @@ export default function GuestlistsPage() {
                 </Table>
               </CardContent>
             </Card>
+
+            {/* Bulk Actions Dialog */}
+            <Dialog open={bulkActionDialogOpen} onOpenChange={setBulkActionDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Bulk Actions</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-muted-foreground">
+                    Apply action to {selectedEntries.length} selected guests
+                  </p>
+                  <div className="space-y-2">
+                    <Button
+                      className="w-full"
+                      onClick={() => bulkActionMutation.mutate({ action: "approve", entryIds: selectedEntries })}
+                      disabled={bulkActionMutation.isPending}
+                    >
+                      Approve All
+                    </Button>
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => bulkActionMutation.mutate({ action: "reject", entryIds: selectedEntries })}
+                      disabled={bulkActionMutation.isPending}
+                    >
+                      Reject All
+                    </Button>
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => bulkActionMutation.mutate({ action: "checkin", entryIds: selectedEntries })}
+                      disabled={bulkActionMutation.isPending}
+                    >
+                      Check In All
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* QR Code Dialog */}
+            <Dialog open={qrCodeDialogOpen} onOpenChange={setQrCodeDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Guestlist QR Code</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className="bg-white p-4 rounded-lg inline-block">
+                      <QrCode size={200} className="text-black" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Scan this code to access the guestlist on mobile devices
+                  </p>
+                  {qrCodeData && (
+                    <div className="text-xs text-muted-foreground break-all">
+                      {qrCodeData.qrCode}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Export Dialog */}
+            <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Export Guestlist</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-muted-foreground">
+                    Export guestlist data and entries
+                  </p>
+                  {exportData && (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <strong>Guestlist:</strong> {exportData.guestlist?.name}
+                      </div>
+                      <div className="text-sm">
+                        <strong>Entries:</strong> {exportData.entries?.length || 0}
+                      </div>
+                      <div className="text-sm">
+                        <strong>Exported:</strong> {new Date(exportData.exportedAt).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      if (exportData) {
+                        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `guestlist-${selectedGuestlist?.name}-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download JSON
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Bookmetender Sync Dialog */}
+            <Dialog open={bookmetenderDialogOpen} onOpenChange={setBookmetenderDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Sync with Bookmetender</DialogTitle>
+                </DialogHeader>
+                <Form {...useForm({
+                  defaultValues: {
+                    apiKey: '',
+                    eventId: ''
+                  }
+                })}>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target as HTMLFormElement);
+                    const apiKey = formData.get('apiKey') as string;
+                    const eventId = formData.get('eventId') as string;
+                    bookmetenderSyncMutation.mutate({ apiKey, eventId });
+                  }} className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">API Key</label>
+                      <Input
+                        name="apiKey"
+                        placeholder="bmt_xxxxxxxxxxxxxxxx"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Event ID</label>
+                      <Input
+                        name="eventId"
+                        placeholder="evt_123"
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={bookmetenderSyncMutation.isPending}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Sync Guests
+                    </Button>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </main>
         </div>
       </div>

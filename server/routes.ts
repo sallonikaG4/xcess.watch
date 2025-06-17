@@ -839,6 +839,95 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Document verification endpoint (simulates external API call)
+  app.post("/api/verify-document", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const documentData = req.body;
+      
+      // Validate required fields
+      if (!documentData.firstName || !documentData.lastName || !documentData.dateOfBirth) {
+        return res.status(400).json({ error: "Missing required document fields" });
+      }
+
+      // Search for banned guests matching the document data
+      const searchQuery = `${documentData.firstName} ${documentData.lastName}`.toLowerCase();
+      const bannedGuests = await storage.searchBannedGuests(searchQuery);
+
+      // Check for exact matches
+      const exactMatch = bannedGuests.find(guest => 
+        guest.firstName.toLowerCase() === documentData.firstName.toLowerCase() &&
+        guest.lastName.toLowerCase() === documentData.lastName.toLowerCase() &&
+        guest.dateOfBirth === documentData.dateOfBirth
+      );
+
+      let verificationResult;
+
+      if (exactMatch) {
+        // Guest is banned
+        verificationResult = {
+          allowed: false,
+          reason: "Guest is banned from entry",
+          ban: {
+            reason: exactMatch.reason || "Security violation",
+            banDate: exactMatch.banDate?.toISOString() || new Date().toISOString(),
+            club: exactMatch.club?.name || "System-wide ban"
+          }
+        };
+
+        // Log the scan attempt
+        await storage.createActivityLog(
+          "id_scan_blocked",
+          `Blocked entry attempt for banned guest: ${documentData.firstName} ${documentData.lastName}`,
+          req.user!.id,
+          exactMatch.clubId || undefined,
+          { documentData, banId: exactMatch.id }
+        );
+      } else {
+        verificationResult = {
+          allowed: true,
+          reason: "Guest cleared for entry",
+          guest: {
+            name: `${documentData.firstName} ${documentData.lastName}`,
+            status: "Standard"
+          }
+        };
+
+        // Log successful scan
+        await storage.createActivityLog(
+          "id_scan_success",
+          `ID scan completed for: ${documentData.firstName} ${documentData.lastName}`,
+          req.user!.id,
+          undefined,
+          { documentData, result: verificationResult }
+        );
+      }
+
+      res.json(verificationResult);
+
+    } catch (error) {
+      console.error("Document verification error:", error);
+      
+      // Log the error
+      await storage.createActivityLog(
+        "id_scan_error",
+        `ID scan verification failed: ${error}`,
+        req.user!.id,
+        undefined,
+        { error: error.toString() }
+      );
+
+      res.status(500).json({ 
+        error: "Document verification failed",
+        allowed: false,
+        reason: "System error - please try again"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup

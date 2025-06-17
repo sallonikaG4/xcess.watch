@@ -297,6 +297,8 @@ export const insertGuestlistSchema = createInsertSchema(guestlists).omit({
   id: true,
   createdAt: true,
   updatedAt: true
+}).extend({
+  eventDate: z.string().transform((val) => new Date(val))
 });
 
 export const insertGuestlistEntrySchema = createInsertSchema(guestlistEntries).omit({

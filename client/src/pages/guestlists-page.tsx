@@ -135,7 +135,6 @@ export default function GuestlistsPage() {
     mutationFn: async (data: GuestlistFormData) => {
       const guestlistData = {
         ...data,
-        eventDate: new Date(data.eventDate).toISOString(),
         createdBy: user?.id,
       };
       const response = await apiRequest("POST", "/api/guestlists", guestlistData);
@@ -384,23 +383,39 @@ export default function GuestlistsPage() {
                     
                     <Form {...guestForm}>
                       <form onSubmit={guestForm.handleSubmit(onGuestSubmit)} className="space-y-4">
-                        <FormField
-                          control={guestForm.control}
-                          name="guestName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Guest Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter guest name" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={guestForm.control}
+                            name="firstName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>First Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter first name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={guestForm.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Last Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter last name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                         
                         <FormField
                           control={guestForm.control}
-                          name="guestEmail"
+                          name="email"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Email</FormLabel>
@@ -414,7 +429,7 @@ export default function GuestlistsPage() {
                         
                         <FormField
                           control={guestForm.control}
-                          name="guestPhone"
+                          name="phone"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Phone</FormLabel>
@@ -560,27 +575,27 @@ export default function GuestlistsPage() {
                       <TableRow key={entry.id}>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{entry.guestName}</div>
-                            {entry.notes && (
-                              <div className="text-sm text-muted-foreground">{entry.notes}</div>
+                            <div className="font-medium">{entry.firstName} {entry.lastName}</div>
+                            {entry.comments && (
+                              <div className="text-sm text-muted-foreground">{entry.comments}</div>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            {entry.guestEmail && (
+                            {entry.email && (
                               <div className="text-sm flex items-center">
                                 <Mail className="w-3 h-3 mr-1" />
-                                {entry.guestEmail}
+                                {entry.email}
                               </div>
                             )}
-                            {entry.guestPhone && (
-                              <div className="text-sm text-muted-foreground">{entry.guestPhone}</div>
+                            {entry.phone && (
+                              <div className="text-sm text-muted-foreground">{entry.phone}</div>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">+{entry.plusOnes}</Badge>
+                          <Badge variant="outline">+{entry.guestCount - 1}</Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(entry.status)}>
@@ -719,10 +734,10 @@ export default function GuestlistsPage() {
                       
                       <FormField
                         control={guestlistForm.control}
-                        name="maxCapacity"
+                        name="maxGuests"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Max Capacity</FormLabel>
+                            <FormLabel>Max Guests</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 

@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { 
+  insertUserSchema,
   insertClubSchema, 
   insertBannedGuestSchema, 
   insertGuestlistSchema,

@@ -86,7 +86,32 @@ export default function LicensesPage() {
 
   const generateLicenseMutation = useMutation({
     mutationFn: async (data: LicenseGenerationData) => {
-      const res = await apiRequest("POST", "/api/platform/licenses/generate", data);
+      // Generate license key in XESS-XXXX-XXXX-XXXX format
+      const generateLicenseKey = () => {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const segments = [];
+        for (let i = 0; i < 4; i++) {
+          let segment = "";
+          for (let j = 0; j < 4; j++) {
+            segment += chars[Math.floor(Math.random() * chars.length)];
+          }
+          segments.push(segment);
+        }
+        return `XESS-${segments.join("-")}`;
+      };
+
+      const licenseData = {
+        organization: data.licenseeOrganization,
+        licenseKey: generateLicenseKey(),
+        licenseType: data.licenseType,
+        maxClubs: data.maxClubs,
+        maxUsers: data.maxUsers,
+        expirationDate: data.expirationDate,
+        features: data.features,
+        isActive: true
+      };
+
+      const res = await apiRequest("POST", "/api/platform/licenses", licenseData);
       return res.json();
     },
     onSuccess: (data) => {
@@ -109,7 +134,7 @@ export default function LicensesPage() {
 
   const revokeLicenseMutation = useMutation({
     mutationFn: async (licenseId: number) => {
-      const res = await apiRequest("POST", `/api/platform/licenses/${licenseId}/revoke`);
+      const res = await apiRequest("DELETE", `/api/platform/licenses/${licenseId}`);
       return res.json();
     },
     onSuccess: () => {

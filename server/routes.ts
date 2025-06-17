@@ -734,6 +734,86 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // License management routes
+  app.get("/api/platform/licenses", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (req.user!.role !== "super_admin") return res.sendStatus(403);
+    
+    try {
+      const licenses = await storage.getAllLicenses();
+      res.json(licenses);
+    } catch (error) {
+      console.error("Error fetching licenses:", error);
+      res.status(500).json({ error: "Failed to fetch licenses" });
+    }
+  });
+
+  app.post("/api/platform/licenses", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (req.user!.role !== "super_admin") return res.sendStatus(403);
+    
+    try {
+      const licenseData = req.body;
+      const license = await storage.createLicense(licenseData);
+      
+      await storage.createActivityLog(
+        "license_created",
+        `License created for ${license.organization}`,
+        req.user!.id
+      );
+      
+      res.status(201).json(license);
+    } catch (error) {
+      console.error("Error creating license:", error);
+      res.status(500).json({ error: "Failed to create license" });
+    }
+  });
+
+  app.patch("/api/platform/licenses/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (req.user!.role !== "super_admin") return res.sendStatus(403);
+    
+    try {
+      const licenseId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const license = await storage.updateLicense(licenseId, updates);
+      
+      await storage.createActivityLog(
+        "license_updated",
+        `License updated for ${license.organization}`,
+        req.user!.id
+      );
+      
+      res.json(license);
+    } catch (error) {
+      console.error("Error updating license:", error);
+      res.status(500).json({ error: "Failed to update license" });
+    }
+  });
+
+  app.delete("/api/platform/licenses/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (req.user!.role !== "super_admin") return res.sendStatus(403);
+    
+    try {
+      const licenseId = parseInt(req.params.id);
+      
+      await storage.revokeLicense(licenseId);
+      
+      await storage.createActivityLog(
+        "license_revoked",
+        `License revoked`,
+        req.user!.id
+      );
+      
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error revoking license:", error);
+      res.status(500).json({ error: "Failed to revoke license" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup

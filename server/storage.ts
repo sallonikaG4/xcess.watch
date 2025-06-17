@@ -9,6 +9,7 @@ import {
   activityLogs,
   userClubAssignments,
   securityCompanies,
+  licenses,
   type User, 
   type InsertUser,
   type Club,
@@ -24,7 +25,9 @@ import {
   type ChatMessage,
   type InsertChatMessage,
   type ActivityLog,
-  type SecurityCompany
+  type SecurityCompany,
+  type License,
+  type InsertLicense
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, count, sql } from "drizzle-orm";
@@ -465,6 +468,40 @@ export class DatabaseStorage implements IStorage {
       guestlistEntries: entriesCount.count,
       idScans: scansCount.count
     };
+  }
+
+  // License methods
+  async getAllLicenses(): Promise<License[]> {
+    return await db.select().from(licenses).orderBy(desc(licenses.createdAt));
+  }
+
+  async getLicense(id: number): Promise<License | undefined> {
+    const [license] = await db.select().from(licenses).where(eq(licenses.id, id));
+    return license || undefined;
+  }
+
+  async createLicense(insertLicense: InsertLicense): Promise<License> {
+    const [license] = await db
+      .insert(licenses)
+      .values(insertLicense)
+      .returning();
+    return license;
+  }
+
+  async updateLicense(id: number, updates: Partial<InsertLicense>): Promise<License> {
+    const [license] = await db
+      .update(licenses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(licenses.id, id))
+      .returning();
+    return license;
+  }
+
+  async revokeLicense(id: number): Promise<void> {
+    await db
+      .update(licenses)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(licenses.id, id));
   }
 }
 

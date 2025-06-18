@@ -7,8 +7,8 @@ services:
       - "5000:5000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://xess_user:xess_password@db:5432/xess_club_security
-      - SESSION_SECRET=your-production-session-secret-change-this
+      - DATABASE_URL=postgresql://xess:Luc1f3r$$1926@db:5432/xess_club_security
+      - SESSION_SECRET=xess-club-security-super-secret-session-key-2024-production-ready
     depends_on:
       - db
     volumes:
@@ -18,11 +18,11 @@ services:
     image: postgres:15-alpine
     environment:
       - POSTGRES_DB=xess_club_security
-      - POSTGRES_USER=xess_user
-      - POSTGRES_PASSWORD=xess_password
+      - POSTGRES_USER=xess
+      - POSTGRES_PASSWORD=Luc1f3r$$1926
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database_backup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./production_database.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
 

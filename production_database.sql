@@ -472,6 +472,19 @@ ALTER SEQUENCE public.security_companies_id_seq OWNED BY public.security_compani
 
 
 --
+-- Name: session; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.session (
+    sid character varying NOT NULL,
+    sess json NOT NULL,
+    expire timestamp(6) without time zone NOT NULL
+);
+
+
+ALTER TABLE public.session OWNER TO neondb_owner;
+
+--
 -- Name: user_club_assignments; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
@@ -723,6 +736,15 @@ COPY public.security_companies (id, name, license_key, is_active, whitelabel_set
 
 
 --
+-- Data for Name: session; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+--
+
+COPY public.session (sid, sess, expire) FROM stdin;
+RiQilmYZudWV94Av428DES_EohZx3JmN	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"},"passport":{"user":2}}	2025-06-19 10:58:05
+\.
+
+
+--
 -- Data for Name: user_club_assignments; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
@@ -923,6 +945,14 @@ ALTER TABLE ONLY public.security_companies
 
 
 --
+-- Name: session session_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.session
+    ADD CONSTRAINT session_pkey PRIMARY KEY (sid);
+
+
+--
 -- Name: user_club_assignments user_club_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
@@ -952,6 +982,13 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_username_unique UNIQUE (username);
+
+
+--
+-- Name: IDX_session_expire; Type: INDEX; Schema: public; Owner: neondb_owner
+--
+
+CREATE INDEX "IDX_session_expire" ON public.session USING btree (expire);
 
 
 --

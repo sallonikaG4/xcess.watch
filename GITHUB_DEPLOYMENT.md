@@ -55,7 +55,12 @@ nano .env
 
 Required environment variables:
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/xess_club_security
+# Neon Database (Recommended - Serverless PostgreSQL)
+DATABASE_URL=postgresql://username:password@ep-hostname.region.neon.tech/dbname?sslmode=require
+
+# Alternative: Self-hosted PostgreSQL
+# DATABASE_URL=postgresql://username:password@localhost:5432/xess_club_security
+
 SESSION_SECRET=your-super-secret-session-key-minimum-32-characters
 NODE_ENV=production
 PORT=5000

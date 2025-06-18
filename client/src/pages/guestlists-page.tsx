@@ -108,7 +108,7 @@ export default function GuestlistsPage() {
     enabled: !!selectedGuestlist,
   });
 
-  const { data: clubs = [] } = useQuery<Club[]>({
+  const { data: clubs = [] } = useQuery({
     queryKey: ["/api/clubs"],
   });
 

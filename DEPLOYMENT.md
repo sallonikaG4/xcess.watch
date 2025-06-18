@@ -1,8 +1,18 @@
 # XESS Club Security Management - Deployment Guide
 
-## Database Migration to PostgreSQL
+## Database Configuration
 
-This project is configured to use PostgreSQL exclusively. No local storage or in-memory data is used.
+This project uses **Neon Database** (serverless PostgreSQL) by default, but can be deployed with any PostgreSQL instance. No local storage or in-memory data is used.
+
+### Neon Database (Recommended)
+- Serverless PostgreSQL with automatic scaling
+- Built-in connection pooling and edge caching
+- Zero-downtime deployments
+- Current configuration uses `@neondatabase/serverless`
+
+### Standard PostgreSQL (Alternative)
+- Traditional PostgreSQL for self-hosted deployments
+- Requires manual connection pooling configuration
 
 ## Prerequisites
 

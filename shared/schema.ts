@@ -124,6 +124,10 @@ export const guestlists = pgTable("guestlists", {
   isActive: boolean("is_active").notNull().default(true),
   clubId: integer("club_id").notNull(),
   createdBy: integer("created_by").notNull(),
+  bookmetenderEventId: text("bookmetender_event_id"),
+  bookmetenderApiKey: text("bookmetender_api_key"),
+  bookmetenderSyncEnabled: boolean("bookmetender_sync_enabled").default(false),
+  lastBookmetenderSync: timestamp("last_bookmetender_sync"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow()
 });

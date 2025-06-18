@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Search, Users, Calendar, CheckCircle, XCircle, Clock, Mail, MessageSquare, QrCode, Download, RefreshCw, MoreHorizontal } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Users, Calendar, CheckCircle, XCircle, Clock, Mail, MessageSquare, QrCode, Download, RefreshCw, MoreHorizontal, Link } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
@@ -1003,11 +1003,19 @@ export default function GuestlistsPage() {
                         name="eventDate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Event Date</FormLabel>
+                            <FormLabel>Event Date & Time</FormLabel>
                             <FormControl>
-                              <Input type="datetime-local" {...field} />
+                              <Input 
+                                type="datetime-local" 
+                                {...field}
+                                min={new Date().toISOString().slice(0, 16)}
+                                className="cursor-pointer"
+                              />
                             </FormControl>
                             <FormMessage />
+                            <p className="text-xs text-muted-foreground">
+                              Select date and time for your event
+                            </p>
                           </FormItem>
                         )}
                       />
@@ -1208,17 +1216,39 @@ export default function GuestlistsPage() {
                       )}
                       
                       <div className="flex justify-between items-center pt-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedGuestlist(guestlist);
-                          }}
-                        >
-                          <Users className="w-4 h-4 mr-2" />
-                          Manage Guests
-                        </Button>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedGuestlist(guestlist);
+                            }}
+                          >
+                            <Users className="w-4 h-4 mr-2" />
+                            Manage Guests
+                          </Button>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBookmetenderDialogOpen(true);
+                              setSelectedGuestlist(guestlist);
+                            }}
+                            title="Connect to Bookmetender"
+                          >
+                            <Link className="w-4 h-4 text-blue-500" />
+                          </Button>
+                          
+                          {guestlist.bookmetenderSyncEnabled && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Link className="w-3 h-3 mr-1" />
+                              Bookmetender
+                            </Badge>
+                          )}
+                        </div>
                         
                         <div className="flex items-center space-x-1">
                           {canManageGuestlists && (

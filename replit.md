@@ -107,6 +107,18 @@ This is a full-stack web application for managing nightclub security operations,
 
 ## Recent Changes
 
+### December 18, 2024 - Enhanced Guestlist Management & Bookmetender Integration
+- **Fixed Guestlist Functionality**: Resolved React hooks errors and API endpoint mismatches preventing proper guest management
+- **Enhanced Date/Time Picker**: Improved UX with future date validation, helper text, and better visual styling
+- **Bookmetender Integration Workflow**: Complete integration system for connecting guestlists to Bookmetender events
+  - API key and event ID configuration dialog
+  - Automatic guest data synchronization
+  - Real-time approval status sync
+  - Visual indicators for connected events
+- **Manage Guests Interface**: Fixed navigation and functionality for comprehensive guest management within guestlists
+- **Demo User System**: Created complete demo accounts for all user roles with proper club assignments
+- **Super Admin Impersonation**: Enhanced user impersonation feature for testing different role perspectives
+
 ### June 17, 2025 - SMS Notifications & Live Chat Integration
 - **SMS Notification System**: Integrated SMS alerts with ID verification system using Twilio/SendGrid APIs
 - **Enhanced Live Chat**: Real-time messaging system with WebSocket support, contact management, and message threading

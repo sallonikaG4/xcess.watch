@@ -33,7 +33,6 @@ function Router() {
       <ProtectedRoute path="/platform-settings" component={PlatformSettingsPage} />
       <ProtectedRoute path="/user-settings" component={UserSettingsPage} />
       <ProtectedRoute path="/licenses" component={LicensesPage} />
-      <ProtectedRoute path="/plugins" component={PluginsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

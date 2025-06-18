@@ -240,7 +240,7 @@ export default function UsersPage() {
                           <FormItem>
                             <FormLabel>Phone</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter phone number" {...field} />
+                              <Input placeholder="Enter phone number" {...field} value={field.value || ""} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

@@ -639,6 +639,93 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.delete("/api/guestlists/:id", requireAuth, requireRole(["super_admin", "admin", "club_manager"]), async (req, res) => {
+    try {
+      await storage.deleteGuestlist(parseInt(req.params.id));
+      
+      if (req.user) {
+        await storage.createActivityLog(
+          "guestlist_deleted",
+          `Guestlist deleted`,
+          req.user.id
+        );
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete guestlist" });
+    }
+  });
+
+  // Impersonation routes
+  app.post("/api/auth/impersonate", requireAuth, requireRole(["super_admin"]), async (req, res) => {
+    try {
+      const { userId } = req.body;
+      const targetUser = await storage.getUser(userId);
+      
+      if (!targetUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Store original user ID in session for later restoration
+      req.session.originalUserId = req.user?.id;
+      req.session.isImpersonating = true;
+      
+      // Set the impersonated user as the current user
+      req.session.passport = { user: targetUser.id };
+      
+      if (req.user) {
+        await storage.createActivityLog(
+          "user_impersonation",
+          `Started impersonating user: ${targetUser.username}`,
+          req.user.id
+        );
+      }
+      
+      res.json({ 
+        message: "Impersonation started", 
+        user: targetUser,
+        isImpersonating: true,
+        originalUserId: req.session.originalUserId
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to impersonate user" });
+    }
+  });
+
+  app.post("/api/auth/stop-impersonation", requireAuth, async (req, res) => {
+    try {
+      if (!req.session.isImpersonating || !req.session.originalUserId) {
+        return res.status(400).json({ message: "Not currently impersonating" });
+      }
+      
+      const originalUser = await storage.getUser(req.session.originalUserId);
+      
+      if (!originalUser) {
+        return res.status(404).json({ message: "Original user not found" });
+      }
+      
+      // Restore original user
+      req.session.passport = { user: originalUser.id };
+      delete req.session.originalUserId;
+      delete req.session.isImpersonating;
+      
+      await storage.createActivityLog(
+        "user_impersonation_ended",
+        `Stopped impersonating user`,
+        originalUser.id
+      );
+      
+      res.json({ 
+        message: "Impersonation stopped", 
+        user: originalUser,
+        isImpersonating: false
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to stop impersonation" });
+    }
+  });
+
   // Users routes
   app.get("/api/users", requireAuth, requireRole(["super_admin", "admin"]), async (req, res) => {
     try {

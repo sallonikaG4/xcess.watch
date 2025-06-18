@@ -108,7 +108,7 @@ export default function GuestlistsPage() {
     enabled: !!selectedGuestlist,
   });
 
-  const { data: clubs = [] } = useQuery({
+  const { data: clubs = [] } = useQuery<Club[]>({
     queryKey: ["/api/clubs"],
   });
 
@@ -116,7 +116,7 @@ export default function GuestlistsPage() {
     resolver: zodResolver(guestlistFormSchema),
     defaultValues: {
       name: "",
-      eventDate: "",
+      eventDate: new Date().toISOString().slice(0, 16),
       description: "",
       maxGuests: 100,
       clubId: 0,

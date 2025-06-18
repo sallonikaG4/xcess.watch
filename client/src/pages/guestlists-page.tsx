@@ -104,7 +104,7 @@ export default function GuestlistsPage() {
   });
 
   const { data: guestlistEntries = [], isLoading: entriesLoading } = useQuery<GuestlistEntry[]>({
-    queryKey: ["/api/guestlist-entries", selectedGuestlist?.id],
+    queryKey: ["/api/guestlists", selectedGuestlist?.id, "entries"],
     enabled: !!selectedGuestlist,
   });
 
@@ -193,18 +193,40 @@ export default function GuestlistsPage() {
     },
   });
 
+  const deleteGuestlistMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/guestlists/${id}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/guestlists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      setSelectedGuestlist(null);
+      toast({
+        title: "Success",
+        description: "Guestlist deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const createGuestMutation = useMutation({
     mutationFn: async (data: GuestEntryFormData) => {
       const guestData = {
         ...data,
         guestlistId: selectedGuestlist?.id,
-        addedBy: user?.id,
       };
-      const response = await apiRequest("POST", "/api/guestlist-entries", guestData);
+      const response = await apiRequest("POST", `/api/guestlists/${selectedGuestlist?.id}/entries`, guestData);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/guestlist-entries", selectedGuestlist?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/guestlists", selectedGuestlist?.id, "entries"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setGuestDialogOpen(false);
       guestForm.reset();
@@ -1160,7 +1182,10 @@ export default function GuestlistsPage() {
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent onClick={() => setSelectedGuestlist(guestlist)}>
+                  <CardContent 
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => setSelectedGuestlist(guestlist)}
+                  >
                     <div className="space-y-3">
                       <div className="flex items-center space-x-2">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -1181,6 +1206,49 @@ export default function GuestlistsPage() {
                           {guestlist.description}
                         </p>
                       )}
+                      
+                      <div className="flex justify-between items-center pt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedGuestlist(guestlist);
+                          }}
+                        >
+                          <Users className="w-4 h-4 mr-2" />
+                          Manage Guests
+                        </Button>
+                        
+                        <div className="flex items-center space-x-1">
+                          {canManageGuestlists && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditGuestlist(guestlist);
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm("Are you sure you want to delete this guestlist?")) {
+                                    deleteGuestlistMutation.mutate(guestlist.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

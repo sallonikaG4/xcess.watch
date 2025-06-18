@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Search, Users, Calendar, CheckCircle, XCircle, Clock, Mail, MessageSquare, QrCode, Download, RefreshCw, MoreHorizontal, Link } from "lucide-react";
+import type { Club } from "@shared/schema";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
